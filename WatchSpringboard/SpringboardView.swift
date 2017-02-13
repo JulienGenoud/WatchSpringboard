@@ -7,12 +7,36 @@
 //
 
 import UIKit
+// FIXME: comparison operators with optionals were removed from the Swift Standard Libary.
+// Consider refactoring the code to use the non-optional operators.
+fileprivate func < <T : Comparable>(lhs: T?, rhs: T?) -> Bool {
+  switch (lhs, rhs) {
+  case let (l?, r?):
+    return l < r
+  case (nil, _?):
+    return true
+  default:
+    return false
+  }
+}
 
-func PointDistanceSquared(x1: CGFloat, y1: CGFloat, x2: CGFloat, y2: CGFloat) -> CGFloat {
+// FIXME: comparison operators with optionals were removed from the Swift Standard Libary.
+// Consider refactoring the code to use the non-optional operators.
+fileprivate func >= <T : Comparable>(lhs: T?, rhs: T?) -> Bool {
+  switch (lhs, rhs) {
+  case let (l?, r?):
+    return l >= r
+  default:
+    return !(lhs < rhs)
+  }
+}
+
+
+func PointDistanceSquared(_ x1: CGFloat, y1: CGFloat, x2: CGFloat, y2: CGFloat) -> CGFloat {
     return sqrt((x1-x2)*(x1-x2)+(y1-y2)*(y1-y2))
 }
 
-func PointDistance(x1: CGFloat, y1: CGFloat, x2: CGFloat, y2: CGFloat) -> CGFloat {
+func PointDistance(_ x1: CGFloat, y1: CGFloat, x2: CGFloat, y2: CGFloat) -> CGFloat {
     return ((x1-x2)*(x1-x2)+(y1-y2)*(y1-y2))
 }
 
@@ -45,7 +69,7 @@ class SpringboardView: UIScrollView, UIScrollViewDelegate {
     
     override var bounds: CGRect {
         didSet {
-            if CGSizeEqualToSize(bounds.size, self.bounds.size) == false {
+            if bounds.size.equalTo(self.bounds.size) == false {
                 setMinimumZoomLevelIsDirty()
             }
             super.bounds = bounds
@@ -54,7 +78,7 @@ class SpringboardView: UIScrollView, UIScrollViewDelegate {
     
     override var frame: CGRect {
         didSet {
-            if CGSizeEqualToSize(frame.size, self.bounds.size) == false {
+            if frame.size.equalTo(self.bounds.size) == false {
                 setMinimumZoomLevelIsDirty()
             }
             super.frame = frame
@@ -65,7 +89,7 @@ class SpringboardView: UIScrollView, UIScrollViewDelegate {
         willSet {
             if let views = itemViews {
                 for view in views {
-                    if view.isDescendantOfView(self) {
+                    if view.isDescendant(of: self) {
                         view.removeFromSuperview()
                     }
                 }
@@ -98,25 +122,25 @@ class SpringboardView: UIScrollView, UIScrollViewDelegate {
         }
     }
     
-    func showAllContent(animated: Bool) {
+    func showAllContent(_ animated: Bool) {
         let contentRectInContentSpace = fullContentRectInContentSpace()
         lastFocusedViewIndex = closestIndexToPointInContent(rectCenter(contentRectInContentSpace))
         
         if animated {
-            UIView.animateWithDuration(0.5, delay: 0, options: [.LayoutSubviews, .AllowAnimatedContent, .BeginFromCurrentState, .CurveEaseInOut], animations: { () -> Void in
-                self.zoomToRect(contentRectInContentSpace, animated: false)
+            UIView.animate(withDuration: 0.5, delay: 0, options: [.layoutSubviews, .allowAnimatedContent, .beginFromCurrentState], animations: { () -> Void in
+                self.zoom(to: contentRectInContentSpace, animated: false)
                 self.layoutIfNeeded()
                 }, completion: nil)
         } else {
-            zoomToRect(contentRectInContentSpace, animated: false)
+            zoom(to: contentRectInContentSpace, animated: false)
         }
     }
     
-    func indexOfItemClosestTo(point: CGPoint) -> UInt {
+    func indexOfItemClosestTo(_ point: CGPoint) -> UInt {
         return closestIndexToPointInContent(point)
     }
     
-    func centerOn(index: UInt, zoomScale: CGFloat, animated: Bool) {
+    func centerOn(_ index: UInt, zoomScale: CGFloat, animated: Bool) {
         lastFocusedViewIndex = index
         let view = itemViews[Int(index)]
         let centerContentSpace = view.center
@@ -128,7 +152,7 @@ class SpringboardView: UIScrollView, UIScrollViewDelegate {
             scrollRectToVisible(rectInSelfSpace, animated: animated)
         } else {
             let rectInContentSpace = rectWithCenter(centerContentSpace, size: view.bounds.size)
-            zoomToRect(rectInContentSpace, animated: animated)
+            zoom(to: rectInContentSpace, animated: animated)
         }
     }
     
@@ -150,13 +174,12 @@ class SpringboardView: UIScrollView, UIScrollViewDelegate {
             let scaleFactor: CGFloat = ((factor) * 0.8 + 0.2)
             let translateFactor: CGFloat = -0.9
             
-            view.transform = CGAffineTransformScale(CGAffineTransformMakeTranslation(dx*translateFactor, dy * translateFactor),
-                minScale*scaleFactor, minScale*scaleFactor)
-            idx++
+            view.transform = CGAffineTransform(translationX: dx*translateFactor, y: dy * translateFactor).scaledBy(x: minScale*scaleFactor, y: minScale*scaleFactor)
+            idx += 1
         }
         
         setNeedsLayout()
-        UIView.animateWithDuration(0.5, delay: 0, options: .CurveEaseOut, animations: { () -> Void in
+        UIView.animate(withDuration: 0.5, delay: 0, options: .curveEaseOut, animations: { () -> Void in
             for view in self.itemViews {
                 view.alpha = 1
             }
@@ -166,16 +189,16 @@ class SpringboardView: UIScrollView, UIScrollViewDelegate {
     
     // MARK: - UITapGestureRecognizer
     
-    func didZoomGesture(sender: UITapGestureRecognizer) {
+    func didZoomGesture(_ sender: UITapGestureRecognizer) {
 
         
         if zoomScale >= minimumZoomLevelInteraction && zoomScale != minimumZoomScale {
             showAllContent(true)
         } else {
-            let positionInSelf = sender.locationInView(self)
+            let positionInSelf = sender.location(in: self)
             let targetIndex = closestIndexToPointInContent(positionInSelf)
             print(targetIndex)
-            UIView.animateWithDuration(0.5, animations: { () -> Void in
+            UIView.animate(withDuration: 0.5, animations: { () -> Void in
                 self.centerOn(targetIndex-1, zoomScale: 1, animated: false)
                 self.layoutIfNeeded()
                 }, completion: nil)
@@ -204,41 +227,41 @@ class SpringboardView: UIScrollView, UIScrollViewDelegate {
         addSubview(touchView)
         addSubview(contentView)
         
-        doubleTapGesture = UITapGestureRecognizer(target: self, action: "didZoomGesture:")
+        doubleTapGesture = UITapGestureRecognizer(target: self, action: #selector(SpringboardView.didZoomGesture(_:)))
         doubleTapGesture.numberOfTapsRequired = 2
         contentView.addGestureRecognizer(doubleTapGesture)
         
     }
     
-    func pointInSelfToContent(point: CGPoint) -> CGPoint {
+    func pointInSelfToContent(_ point: CGPoint) -> CGPoint {
         let zoomScale = self.zoomScale
-        return CGPointMake(point.x/zoomScale, point.y/zoomScale)
+        return CGPoint(x: point.x/zoomScale, y: point.y/zoomScale)
     }
     
-    func pointInContentToSelf(point: CGPoint) -> CGPoint {
+    func pointInContentToSelf(_ point: CGPoint) -> CGPoint {
         let zoomScale = self.zoomScale
-        return CGPointMake(point.x*zoomScale, point.y*zoomScale)
+        return CGPoint(x: point.x*zoomScale, y: point.y*zoomScale)
     }
     
-    func sizeInSelfToContent(size: CGSize) -> CGSize {
+    func sizeInSelfToContent(_ size: CGSize) -> CGSize {
         let zoomScale = self.zoomScale
-        return CGSizeMake(size.width/zoomScale, size.height/zoomScale)
+        return CGSize(width: size.width/zoomScale, height: size.height/zoomScale)
     }
     
-    func sizeInContentToSelf(size: CGSize) -> CGSize {
+    func sizeInContentToSelf(_ size: CGSize) -> CGSize {
         let zoomScale = self.zoomScale
-        return CGSizeMake(size.width*zoomScale, size.height*zoomScale)
+        return CGSize(width: size.width*zoomScale, height: size.height*zoomScale)
     }
     
-    func rectCenter(rect: CGRect) -> CGPoint {
-        return CGPointMake(rect.origin.x+rect.size.width*0.5, rect.origin.y+rect.size.height*0.5)
+    func rectCenter(_ rect: CGRect) -> CGPoint {
+        return CGPoint(x: rect.origin.x+rect.size.width*0.5, y: rect.origin.y+rect.size.height*0.5)
     }
     
-    func rectWithCenter(center: CGPoint, size: CGSize) -> CGRect {
-        return CGRectMake(center.x-size.width*0.5, center.y-size.height*0.5, size.width, size.height)
+    func rectWithCenter(_ center: CGPoint, size: CGSize) -> CGRect {
+        return CGRect(x: center.x-size.width*0.5, y: center.y-size.height*0.5, width: size.width, height: size.height)
     }
     
-    func transformView(view: SpringboardItemView) {
+    func transformView(_ view: SpringboardItemView) {
         let size = self.bounds.size
         let zoomScale = zoomScaleCache
         let insets = self.contentInset
@@ -246,17 +269,17 @@ class SpringboardView: UIScrollView, UIScrollViewDelegate {
         var center = view.center
         let floatDiameter = CGFloat(itemDiameter)
         let floatPadding = CGFloat(itemPadding)
-        var frame = self.convertRect(CGRectMake(view.center.x - floatDiameter/2, view.center.y - floatDiameter/2, floatDiameter, floatDiameter), fromView: view.superview)
+        var frame = self.convert(CGRect(x: view.center.x - floatDiameter/2, y: view.center.y - floatDiameter/2, width: floatDiameter, height: floatDiameter), from: view.superview)
         let contentOffset = self.contentOffset
         frame.origin.x -= contentOffset.x
         frame.origin.y -= contentOffset.y
-        center = CGPointMake(frame.origin.x+frame.size.width/2, frame.origin.y+frame.size.height/2)
-        let padding = floatPadding * zoomScale * 0.4
+        center = CGPoint(x: frame.origin.x+frame.size.width/2, y: frame.origin.y+frame.size.height/2)
+        let padding = floatPadding * zoomScale! * 0.4
         var distanceToBorder: CGFloat = size.width
         var xOffset: CGFloat = 0
         var yOffset: CGFloat = 0
         
-        let distanceToBeOffset = floatDiameter * zoomScale * (min(size.width, size.height)/320)
+        let distanceToBeOffset = floatDiameter * zoomScale! * (min(size.width, size.height)/320)
         let leftDistance = center.x - padding - insets.left
         if leftDistance < distanceToBeOffset {
             if leftDistance < distanceToBorder {
@@ -291,7 +314,7 @@ class SpringboardView: UIScrollView, UIScrollViewDelegate {
         if distanceToBorder < distanceToBeOffset * 2 {
             if distanceToBorder < -(floatDiameter*2.5) {
                 view.transform = minTransform
-                usedScale = minimumItemScaling * zoomScale
+                usedScale = minimumItemScaling * zoomScale!
             } else {
                 var rawScale = max(distanceToBorder / (distanceToBeOffset * 2), 0)
                 rawScale = min(rawScale,1)
@@ -305,15 +328,15 @@ class SpringboardView: UIScrollView, UIScrollViewDelegate {
                 
                 scale = max(min(scale * transformFactor + (1 - transformFactor), 1), 0)
                 translationModifier = min(translationModifier * transformFactor, 1)
-                view.transform = CGAffineTransformTranslate(CGAffineTransformMakeScale(scale, scale), xOffset * translationModifier, yOffset * translationModifier)
+                view.transform = CGAffineTransform(scaleX: scale, y: scale).translatedBy(x: xOffset * translationModifier, y: yOffset * translationModifier)
                 
-                usedScale = scale * zoomScale
+                usedScale = scale * zoomScale!
             }
         } else {
-            view.transform = CGAffineTransformIdentity
+            view.transform = CGAffineTransform.identity
             usedScale = zoomScale
         }
-        if self.dragging || self.zooming {
+        if self.isDragging || self.isZooming {
             view.setScale(usedScale, animated: true)
         } else {
             view.scale = usedScale
@@ -326,17 +349,17 @@ class SpringboardView: UIScrollView, UIScrollViewDelegate {
         setNeedsLayout()
     }
     
-    func closestIndexToPointInSelf(pointInSelf: CGPoint) -> UInt {
+    func closestIndexToPointInSelf(_ pointInSelf: CGPoint) -> UInt {
         let pointInContent = self.pointInContentToSelf(pointInSelf)
         return closestIndexToPointInContent(pointInContent)
     }
     
-    func closestIndexToPointInContent(pointInContent: CGPoint) -> UInt {
+    func closestIndexToPointInContent(_ pointInContent: CGPoint) -> UInt {
         var distance = CGFloat(FLT_MAX)
         var index = lastFocusedViewIndex
-        for (idx, view) in itemViews.enumerate() {
+        for (idx, view) in itemViews.enumerated() {
             
-            let center = CGPointMake(view.center.x / UIScreen.mainScreen().scale, view.center.y / UIScreen.mainScreen().scale)
+            let center = CGPoint(x: view.center.x / UIScreen.main.scale, y: view.center.y / UIScreen.main.scale)
             let potentialDistance = PointDistance(center.x, y1: center.y, x2: pointInContent.x, y2: pointInContent.y)
             
             if (potentialDistance < distance) {
@@ -344,29 +367,29 @@ class SpringboardView: UIScrollView, UIScrollViewDelegate {
                 index = UInt(idx)
             }
         }
-        return index
+        return index!
     }
     
-    func centerOnClosestToScreenCenterAnimated(animated: Bool) {
+    func centerOnClosestToScreenCenterAnimated(_ animated: Bool) {
         let sizeInSelf = self.bounds.size
-        let centerInSelf = CGPointMake(sizeInSelf.width * 0.5, sizeInSelf.height * 0.5)
+        let centerInSelf = CGPoint(x: sizeInSelf.width * 0.5, y: sizeInSelf.height * 0.5)
         let closestIndex = self.closestIndexToPointInSelf(centerInSelf)
         self.centerOn(closestIndex, zoomScale: zoomScale, animated: animated)
     }
     
     func fullContentRectInContentSpace() -> CGRect {
-        return CGRectMake(self.contentSizeExtra.width*0.5,
-            contentSizeExtra.height*0.5,
-            contentSizeUnscaled.width - contentSizeExtra.width,
-            contentSizeUnscaled.height - contentSizeExtra.height)
+        return CGRect(x: self.contentSizeExtra.width*0.5,
+            y: contentSizeExtra.height*0.5,
+            width: contentSizeUnscaled.width - contentSizeExtra.width,
+            height: contentSizeUnscaled.height - contentSizeExtra.height)
     }
     
     // MARK: UIScrollViewDelegate
-    func scrollViewWillEndDragging(scrollView: UIScrollView, withVelocity velocity: CGPoint, targetContentOffset: UnsafeMutablePointer<CGPoint>) {
+    func scrollViewWillEndDragging(_ scrollView: UIScrollView, withVelocity velocity: CGPoint, targetContentOffset: UnsafeMutablePointer<CGPoint>) {
         let size = self.bounds.size
         let zoomScale = self.zoomScale
         
-        var proposedTargetCenter = CGPointMake(targetContentOffset.memory.x+size.width/2, targetContentOffset.memory.y+size.height/2)
+        var proposedTargetCenter = CGPoint(x: targetContentOffset.pointee.x+size.width/2, y: targetContentOffset.pointee.y+size.height/2)
         proposedTargetCenter.x /= zoomScale
         proposedTargetCenter.y /= zoomScale
         
@@ -374,13 +397,13 @@ class SpringboardView: UIScrollView, UIScrollViewDelegate {
         let view = itemViews[Int(lastFocusedViewIndex)]
         let idealTargetCenter = view.center
         
-        let idealTargetOffset = CGPointMake(idealTargetCenter.x-size.width/2/zoomScale,
-            idealTargetCenter.y-size.height/2/zoomScale)
+        let idealTargetOffset = CGPoint(x: idealTargetCenter.x-size.width/2/zoomScale,
+            y: idealTargetCenter.y-size.height/2/zoomScale)
         
-        let correctedTargetOffset = CGPointMake(idealTargetOffset.x*zoomScale,
-            idealTargetOffset.y*zoomScale)
+        let correctedTargetOffset = CGPoint(x: idealTargetOffset.x*zoomScale,
+            y: idealTargetOffset.y*zoomScale)
         
-        var currentCenter = CGPointMake(self.contentOffset.x+size.width/2, self.contentOffset.y+size.height/2)
+        var currentCenter = CGPoint(x: self.contentOffset.x+size.width/2, y: self.contentOffset.y+size.height/2)
         currentCenter.x /= zoomScale
         currentCenter.y /= zoomScale
         
@@ -388,45 +411,45 @@ class SpringboardView: UIScrollView, UIScrollViewDelegate {
         contentCenter.x /= zoomScale
         contentCenter.y /= zoomScale
         
-        let contentSizeNoExtras = CGSizeMake(contentSizeUnscaled.width-contentSizeExtra.width,
-            contentSizeUnscaled.height-contentSizeExtra.height)
-        let contentFrame = CGRectMake(contentCenter.x-contentSizeNoExtras.width*0.5, contentCenter.y-contentSizeNoExtras.height*0.5, contentSizeNoExtras.width, contentSizeNoExtras.height)
+        let contentSizeNoExtras = CGSize(width: contentSizeUnscaled.width-contentSizeExtra.width,
+            height: contentSizeUnscaled.height-contentSizeExtra.height)
+        let contentFrame = CGRect(x: contentCenter.x-contentSizeNoExtras.width*0.5, y: contentCenter.y-contentSizeNoExtras.height*0.5, width: contentSizeNoExtras.width, height: contentSizeNoExtras.height)
         
-        if CGRectContainsPoint(contentFrame, proposedTargetCenter) {
-            targetContentOffset.memory = correctedTargetOffset
+        if contentFrame.contains(proposedTargetCenter) {
+            targetContentOffset.pointee = correctedTargetOffset
         } else {
-            if CGRectContainsPoint(contentFrame, currentCenter) {
+            if contentFrame.contains(currentCenter) {
                 let ourPriority: CGFloat = 0.8
                 
-                targetContentOffset.memory = CGPointMake(
-                    targetContentOffset.memory.x*(1.0-ourPriority)+correctedTargetOffset.x*ourPriority,
-                    targetContentOffset.memory.y*(1.0-ourPriority)+correctedTargetOffset.y*ourPriority)
+                targetContentOffset.pointee = CGPoint(
+                    x: targetContentOffset.pointee.x*(1.0-ourPriority)+correctedTargetOffset.x*ourPriority,
+                    y: targetContentOffset.pointee.y*(1.0-ourPriority)+correctedTargetOffset.y*ourPriority)
                 centerOnEndDecelerate = true
             } else {
-                targetContentOffset.memory = contentOffset
+                targetContentOffset.pointee = contentOffset
             }
         }
     }
     
-    func scrollViewDidEndDragging(scrollView: UIScrollView, willDecelerate decelerate: Bool) {
+    func scrollViewDidEndDragging(_ scrollView: UIScrollView, willDecelerate decelerate: Bool) {
         if centerOnEndDrag {
             centerOnEndDrag = false
             centerOn(lastFocusedViewIndex, zoomScale: zoomScale, animated: true)
         }
     }
     
-    func scrollViewDidEndDecelerating(scrollView: UIScrollView) {
+    func scrollViewDidEndDecelerating(_ scrollView: UIScrollView) {
         if centerOnEndDecelerate {
             centerOnEndDecelerate = false
             centerOn(lastFocusedViewIndex, zoomScale: zoomScale, animated: true)
         }
     }
     
-    func viewForZoomingInScrollView(scrollView: UIScrollView) -> UIView? {
+    func viewForZooming(in scrollView: UIScrollView) -> UIView? {
         return contentView
     }
     
-    func scrollViewDidZoom(scrollView: UIScrollView) {
+    func scrollViewDidZoom(_ scrollView: UIScrollView) {
         zoomScaleCache = zoomScale
     }
     
@@ -443,8 +466,8 @@ class SpringboardView: UIScrollView, UIScrollViewDelegate {
         let items = min(size.width,size.height) / max(size.width,size.height) * sqrt(CGFloat(itemViews.count))
         var itemsPerLine = ceil(items)
         
-        if itemsPerLine % 2 == 0 {
-            itemsPerLine++
+        if itemsPerLine.truncatingRemainder(dividingBy: 2) == 0 {
+            itemsPerLine += 1
         }
         let lines = ceil(CGFloat(itemViews.count)/itemsPerLine)
         var newMinimumZoomScale: CGFloat = 0
@@ -452,17 +475,17 @@ class SpringboardView: UIScrollView, UIScrollViewDelegate {
         let floatDiameter = CGFloat(itemDiameter)
         let floatPadding = CGFloat(itemPadding)
         if isContentSizeDirty {
-            contentSizeUnscaled = CGSizeMake(itemsPerLine*floatDiameter+(itemsPerLine+1)*floatPadding+(floatDiameter+floatPadding)/2, lines*floatDiameter+(2)*floatPadding)
+            contentSizeUnscaled = CGSize(width: itemsPerLine*floatDiameter+(itemsPerLine+1)*floatPadding+(floatDiameter+floatPadding)/2, height: lines*floatDiameter+(2)*floatPadding)
             
             newMinimumZoomScale = min((size.width-insets.left-insets.right)/contentSizeUnscaled.width,
                 (size.height-insets.top-insets.bottom)/contentSizeUnscaled.height)
             
-            contentSizeExtra = CGSizeMake((size.width-floatDiameter*0.5)/newMinimumZoomScale,
-                (size.height-floatDiameter*0.5)/newMinimumZoomScale)
+            contentSizeExtra = CGSize(width: (size.width-floatDiameter*0.5)/newMinimumZoomScale,
+                height: (size.height-floatDiameter*0.5)/newMinimumZoomScale)
             
             contentSizeUnscaled.width += contentSizeExtra.width
             contentSizeUnscaled.height += contentSizeExtra.height
-            contentView.bounds = CGRectMake(0, 0, contentSizeUnscaled.width, contentSizeUnscaled.height)
+            contentView.bounds = CGRect(x: 0, y: 0, width: contentSizeUnscaled.width, height: contentSizeUnscaled.height)
         }
         if isMinZoomLevelDirty {
             minimumZoomScale = newMinimumZoomScale
@@ -471,18 +494,18 @@ class SpringboardView: UIScrollView, UIScrollViewDelegate {
                 zoomScale = newZoom
                 zoomScaleCache = newZoom
                 
-                contentView.center = CGPointMake(contentSizeUnscaled.width*0.5*newZoom, contentSizeUnscaled.height*0.5*newZoom)
-                contentSize = CGSizeMake(contentSizeUnscaled.width*newZoom, contentSizeUnscaled.height*newZoom)
+                contentView.center = CGPoint(x: contentSizeUnscaled.width*0.5*newZoom, y: contentSizeUnscaled.height*0.5*newZoom)
+                contentSize = CGSize(width: contentSizeUnscaled.width*newZoom, height: contentSizeUnscaled.height*newZoom)
             }
         }
         if isContentSizeDirty {
             var idx: UInt = 0
             for view in itemViews {
-                view.bounds = CGRectMake(0, 0, floatDiameter, floatDiameter)
+                view.bounds = CGRect(x: 0, y: 0, width: floatDiameter, height: floatDiameter)
                 
                 
                 var line: UInt = UInt(CGFloat(idx)/itemsPerLine)
-                var indexInLine: UInt = UInt(CGFloat(idx)%itemsPerLine)
+                var indexInLine: UInt = UInt(CGFloat(idx).truncatingRemainder(dividingBy: itemsPerLine))
                 
                 if idx == 0 {
                     line = UInt(CGFloat(itemViews.count)/itemsPerLine/2)
@@ -506,8 +529,8 @@ class SpringboardView: UIScrollView, UIScrollViewDelegate {
                 let posX: CGFloat = contentSizeExtra.width*0.5+floatPadding+floatLineOffset+floatIndexInLine*(floatDiameter + floatPadding)+floatDiameter/2
                 let posY: CGFloat = contentSizeExtra.height*0.5+floatPadding+floatLine*(floatDiameter)+floatDiameter/2
                 
-                view.center = CGPointMake(posX, posY)
-                idx++
+                view.center = CGPoint(x: posX, y: posY)
+                idx += 1
             }
             isContentSizeDirty = false
         }
@@ -519,11 +542,11 @@ class SpringboardView: UIScrollView, UIScrollViewDelegate {
         }
         
         zoomScaleCache = self.zoomScale
-        touchView.bounds = CGRectMake(0, 0, (contentSizeUnscaled.width - contentSizeExtra.width) * zoomScaleCache, (contentSizeUnscaled.height - contentSizeExtra.height) * zoomScaleCache)
-        touchView.center = CGPointMake(contentSizeUnscaled.width * 0.5 * zoomScaleCache, contentSizeUnscaled.height * 0.5 * zoomScaleCache)
+        touchView.bounds = CGRect(x: 0, y: 0, width: (contentSizeUnscaled.width - contentSizeExtra.width) * zoomScaleCache, height: (contentSizeUnscaled.height - contentSizeExtra.height) * zoomScaleCache)
+        touchView.center = CGPoint(x: contentSizeUnscaled.width * 0.5 * zoomScaleCache, y: contentSizeUnscaled.height * 0.5 * zoomScaleCache)
         
         let scale = min(minimumItemScaling * transformFactor + (1 - transformFactor), 1)
-        minTransform = CGAffineTransformMakeScale(scale, scale)
+        minTransform = CGAffineTransform(scaleX: scale, y: scale)
         for view in itemViews {
             transformView(view)
         }

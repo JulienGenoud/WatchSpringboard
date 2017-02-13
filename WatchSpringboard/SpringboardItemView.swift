@@ -42,21 +42,21 @@ class SpringboardItemView: UIView {
     
     func initialize() {
         scale = 1
-        label.opaque = false
+        label.isOpaque = false
         label.backgroundColor = nil
-        label.font = UIFont.systemFontOfSize(UIFont.smallSystemFontSize())
+        label.font = UIFont.systemFont(ofSize: UIFont.smallSystemFontSize)
         addSubview(label)
         addSubview(icon)
     }
     
-    func setScale(scale: CGFloat, animated: Bool) {
+    func setScale(_ scale: CGFloat, animated: Bool) {
         if self.scale != scale {
             let wasSmall = self.scale < kSpringboardItemViewSmallThreshold
             self.scale = scale
             setNeedsLayout()
             if (self.scale < kSpringboardItemViewSmallThreshold) != wasSmall {
                 if animated {
-                    UIView.animateWithDuration(0.3, animations: { () -> Void in
+                    UIView.animate(withDuration: 0.3, animations: { () -> Void in
                         self.layoutIfNeeded()
                         self.label.alpha = self.scale < self.kSpringboardItemViewSmallThreshold ? 0 : 1
                     })
@@ -71,8 +71,8 @@ class SpringboardItemView: UIView {
         super.layoutSubviews()
         let size = self.bounds.size
         
-        icon.center = CGPointMake(size.width*0.5, size.height*0.5)
-        icon.bounds = CGRectMake(0, 0, size.width, size.height)
+        icon.center = CGPoint(x: size.width*0.5, y: size.height*0.5)
+        icon.bounds = CGRect(x: 0, y: 0, width: size.width, height: size.height)
         if let vev = visualEffectView {
             vev.center = icon.center
             vev.bounds = icon.bounds
@@ -82,10 +82,10 @@ class SpringboardItemView: UIView {
             vemv.bounds = icon.bounds
         }
         label.sizeToFit()
-        label.center = CGPointMake(size.width*0.5, size.height+4)
+        label.center = CGPoint(x: size.width*0.5, y: size.height+4)
         
         let scale = 60/size.width
-        icon.transform = CGAffineTransformMakeScale(scale, scale)
+        icon.transform = CGAffineTransform(scaleX: scale, y: scale)
         if let vev = visualEffectView {
             vev.transform = icon.transform
         }

@@ -20,7 +20,7 @@ class ViewController: UIViewController {
     // Dispose of any resources that can be recreated.
   }
 
-  override func viewWillAppear(animated: Bool) {
+  override func viewWillAppear(_ animated: Bool) {
     if let itemView = self.view as? ItemsView {
         itemView.springboardView.centerOn(0, zoomScale: 1, animated: false)
         itemView.springboardView.doIntroAnimation()
